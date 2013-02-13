@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
-	"unicode/utf8"
 )
 
 // used by rulesets
@@ -627,13 +626,11 @@ func Asciify(word string) string {
 // helper funcs
 
 func reverse(s string) string {
-	o := make([]int, utf8.RuneCountInString(s))
-	i := len(o)
-	for _, c := range s {
-		i--
-		o[i] = c
-	}
-	return string(o)
+  runes := []rune(s)
+  for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+    runes[i], runes[j] = runes[j], runes[i]
+  }
+  return string(runes)
 }
 
 func isSpacerChar(c int) bool {
