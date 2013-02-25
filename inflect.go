@@ -1,6 +1,7 @@
 package inflect
 
 import (
+  /* "bytes" */
 	"fmt"
 	"regexp"
 	"strconv"
@@ -649,17 +650,17 @@ func isSpacerChar(c int) bool {
 
 func splitAtCaseChange(s string) []string {
 	words := make([]string, 0)
-	word := make([]int, 0)
+	word := make([]byte, 0)
 	for _, c := range s {
-		spacer := isSpacerChar(c)
+		spacer := isSpacerChar(int(c))
 		if len(word) > 0 {
 			if unicode.IsUpper(c) || spacer {
 				words = append(words, string(word))
-				word = make([]int, 0)
+				word = make([]byte, 0)
 			}
 		}
 		if !spacer {
-			word = append(word, unicode.ToLower(c))
+			word = append(word, byte(unicode.ToLower(c)))
 		}
 	}
 	words = append(words, string(word))
@@ -668,20 +669,20 @@ func splitAtCaseChange(s string) []string {
 
 func splitAtCaseChangeWithTitlecase(s string) []string {
 	words := make([]string, 0)
-	word := make([]int, 0)
+	word := make([]byte, 0)
 	for _, c := range s {
-		spacer := isSpacerChar(c)
+		spacer := isSpacerChar(int(c))
 		if len(word) > 0 {
 			if unicode.IsUpper(c) || spacer {
 				words = append(words, string(word))
-				word = make([]int, 0)
+				word = make([]byte, 0)
 			}
 		}
 		if !spacer {
 			if len(word) > 0 {
-				word = append(word, unicode.ToLower(c))
+				word = append(word, byte(unicode.ToLower(c)))
 			} else {
-				word = append(word, unicode.ToUpper(c))
+				word = append(word, byte(unicode.ToUpper(c)))
 			}
 		}
 	}
