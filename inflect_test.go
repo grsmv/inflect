@@ -123,7 +123,7 @@ var ClassNameToForeignKeyWithUnderscore map[string]string = map[string]string{
 }
 
 var PluralToForeignKeyWithUnderscore map[string]string = map[string]string{
-	"people":  "person_id",
+	"people":   "person_id",
 	"accounts": "account_id",
 }
 
@@ -275,6 +275,12 @@ var Irregularities map[string]string = map[string]string{
 	"child":  "children",
 	"sex":    "sexes",
 	"move":   "moves",
+}
+
+var Capitalizes map[string]string = map[string]string{
+	"person":                     "Person",
+	"lorem ipsum dolor sit amet": "Lorem ipsum dolor sit amet",
+	"中文 Chinese":                 "中文 Chinese",
 }
 
 type AcronymCase struct {
@@ -540,5 +546,11 @@ func TestPluralizeOfIrregularity(t *testing.T) {
 	for singular, plural := range Irregularities {
 		AddIrregular(singular, plural)
 		assertEqual(t, plural, Pluralize(plural))
+	}
+}
+
+func TestCapitalize(t *testing.T) {
+	for text, capitalized := range Capitalizes {
+		assertEqual(t, capitalized, Capitalize(text))
 	}
 }
