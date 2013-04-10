@@ -1,6 +1,7 @@
 package inflect
 
 import (
+	"runtime/debug"
 	"testing"
 )
 
@@ -8,7 +9,7 @@ import (
 
 func assertEqual(t *testing.T, a, b string) {
 	if a != b {
-		t.Errorf("inflect: expected %v got %v", a, b)
+		t.Errorf("inflect: expected %v got %v \n %s", a, b, debug.Stack())
 	}
 }
 
