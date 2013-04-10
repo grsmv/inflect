@@ -1,7 +1,8 @@
 package inflect
 
 import (
-  /* "bytes" */
+	/* "bytes" */
+
 	"fmt"
 	"regexp"
 	"strconv"
@@ -28,8 +29,8 @@ type Ruleset struct {
 }
 
 // create a blank ruleset. Unless you are going to
-// build your own rules from scratch you probably 
-// won't need this and can just use the defaultRuleset 
+// build your own rules from scratch you probably
+// won't need this and can just use the defaultRuleset
 // via the global inflect.* methods
 func NewRuleset() *Ruleset {
 	rs := new(Ruleset)
@@ -237,7 +238,7 @@ func (rs *Ruleset) Uncountables() map[string]bool {
 	return rs.uncountables
 }
 
-// add a pluralization rule 
+// add a pluralization rule
 func (rs *Ruleset) AddPlural(suffix, replacement string) {
 	rs.AddPluralExact(suffix, replacement, false)
 }
@@ -247,10 +248,7 @@ func (rs *Ruleset) AddPluralExact(suffix, replacement string, exact bool) {
 	// remove uncountable
 	delete(rs.uncountables, suffix)
 	// create rule
-	r := new(Rule)
-	r.suffix = suffix
-	r.replacement = replacement
-	r.exact = exact
+	r := newRule(suffix, replacement, exact)
 	// prepend
 	rs.plurals = append([]*Rule{r}, rs.plurals...)
 }
@@ -266,19 +264,14 @@ func (rs *Ruleset) AddSingularExact(suffix, replacement string, exact bool) {
 	// remove from uncountable
 	delete(rs.uncountables, suffix)
 	// create rule
-	r := new(Rule)
-	r.suffix = suffix
-	r.replacement = replacement
-	r.exact = exact
+	r := newRule(suffix, replacement, exact)
 	rs.singulars = append([]*Rule{r}, rs.singulars...)
 }
 
 // Human rules are applied by humanize to show more friendly
 // versions of words
 func (rs *Ruleset) AddHuman(suffix, replacement string) {
-	r := new(Rule)
-	r.suffix = suffix
-	r.replacement = replacement
+	r := newRule(suffix, replacement, false)
 	rs.humans = append([]*Rule{r}, rs.humans...)
 }
 
@@ -292,13 +285,11 @@ func (rs *Ruleset) AddIrregular(singular, plural string) {
 	rs.AddSingular(plural, singular)
 }
 
-// if you use acronym you may need to add them to the ruleset 
+// if you use acronym you may need to add them to the ruleset
 // to prevent Underscored words of things like "HTML" coming out
 // as "h_t_m_l"
 func (rs *Ruleset) AddAcronym(word string) {
-	r := new(Rule)
-	r.suffix = word
-	r.replacement = rs.Titleize(strings.ToLower(word))
+	r := newRule(word, rs.Titleize(strings.ToLower(word)), false)
 	rs.acronyms = append(rs.acronyms, r)
 }
 
@@ -326,14 +317,9 @@ func (rs *Ruleset) Pluralize(word string) string {
 		return word
 	}
 	for _, rule := range rs.plurals {
-		if rule.exact {
-			if word == rule.suffix {
-				return rule.replacement
-			}
-		} else {
-			if strings.HasSuffix(word, rule.suffix) {
-				return replaceLast(word, rule.suffix, rule.replacement)
-			}
+		replaced, applied := rule.Apply(word)
+		if applied {
+			return replaced
 		}
 	}
 	return word + "s"
@@ -348,14 +334,9 @@ func (rs *Ruleset) Singularize(word string) string {
 		return word
 	}
 	for _, rule := range rs.singulars {
-		if rule.exact {
-			if word == rule.suffix {
-				return rule.replacement
-			}
-		} else {
-			if strings.HasSuffix(word, rule.suffix) {
-				return replaceLast(word, rule.suffix, rule.replacement)
-			}
+		replaced, applied := rule.Apply(word)
+		if applied {
+			return replaced
 		}
 	}
 	return word
@@ -363,7 +344,7 @@ func (rs *Ruleset) Singularize(word string) string {
 
 // uppercase first character
 func (rs *Ruleset) Capitalize(word string) string {
-	return word[:1] + word[1:]
+	return strings.ToUpper(word[:1]) + word[1:]
 }
 
 // "dino_party" -> "DinoParty"
@@ -518,6 +499,40 @@ func (rs *Ruleset) Ordinalize(str string) string {
 	return fmt.Sprintf("%dth", number)
 }
 
+func newRule(suffix, replacement string, exact bool) *Rule {
+	rule := &Rule{
+		suffix:      strings.ToLower(suffix),
+		replacement: replacement,
+		exact:       exact,
+	}
+	return rule
+}
+
+func (rule *Rule) Apply(word string) (replaced string, applied bool) {
+	lowercaseWord := strings.ToLower(word)
+
+	if rule.exact {
+		if lowercaseWord == rule.suffix {
+			return rule.keepCapitalization(rule.replacement, word), true
+		}
+	} else {
+		if strings.HasSuffix(lowercaseWord, rule.suffix) {
+			replaced := replaceLast(lowercaseWord, rule.suffix, rule.replacement)
+			return rule.keepCapitalization(replaced, word), true
+		}
+	}
+
+	return
+}
+
+func (rule *Rule) keepCapitalization(word, originalWord string) string {
+	isCapitalized := defaultRuleset.Capitalize(originalWord[:1]) == originalWord[:1]
+	if !isCapitalized {
+		return word
+	}
+	return defaultRuleset.Capitalize(word)
+}
+
 /////////////////////////////////////////
 // the default global ruleset
 //////////////////////////////////////////
@@ -627,11 +642,11 @@ func Asciify(word string) string {
 // helper funcs
 
 func reverse(s string) string {
-  runes := []rune(s)
-  for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
-    runes[i], runes[j] = runes[j], runes[i]
-  }
-  return string(runes)
+	runes := []rune(s)
+	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+		runes[i], runes[j] = runes[j], runes[i]
+	}
+	return string(runes)
 }
 
 func isSpacerChar(c int) bool {
